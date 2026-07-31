@@ -1,10 +1,63 @@
+export type AdapterId
+    = | "cubemap-tiles"
+    | "cubemap-video"
+    | "cubemap"
+    | "dual-fisheye-video"
+    | "dual-fisheye"
+    | "equirectangular-tiles"
+    | "equirectangular-video"
+    | "equirectangular";
 export type MediaType = "image" | "video";
+export type CubemapLayout = "net" | "separate" | "stripe";
+export type CubemapFace = "back" | "bottom" | "front" | "left" | "right" | "top";
+export type CubemapFaces = Record<CubemapFace, string>;
+
+export const CUBEMAP_FACES: CubemapFace[] = ["left", "front", "right", "back", "top", "bottom"];
 
 export interface PanoramaConfig {
-    schemaVersion: 1;
+    schemaVersion: 2;
+    adapter: AdapterId;
     media: {
-        type: MediaType;
         url: string;
+    };
+    equirectangular: {
+        useXmpData: boolean;
+        shader: boolean;
+        resolution: number;
+    };
+    equirectangularTiles: {
+        width: number;
+        cols: number;
+        rows: number;
+        tileUrl: string;
+        baseUrl: string;
+        useXmpData: boolean;
+        resolution: number;
+        showErrorTile: boolean;
+        baseBlur: boolean;
+        antialias: boolean;
+    };
+    equirectangularVideo: {
+        shader: boolean;
+        resolution: number;
+    };
+    cubemap: {
+        layout: CubemapLayout;
+        faces: CubemapFaces;
+        flipTopBottom: boolean;
+        stripeOrder: CubemapFace[];
+    };
+    cubemapTiles: {
+        faceSize: number;
+        nbTiles: number;
+        tileUrl: string;
+        flipTopBottom: boolean;
+        showErrorTile: boolean;
+        baseBlur: boolean;
+        antialias: boolean;
+    };
+    cubemapVideo: {
+        equiangular: boolean;
     };
     view: {
         defaultYaw: number;
@@ -33,11 +86,57 @@ export interface PanoramaConfig {
     };
 }
 
+const EMPTY_FACES: CubemapFaces = {
+    left: "",
+    front: "",
+    right: "",
+    back: "",
+    top: "",
+    bottom: "",
+};
+
 export const DEFAULT_CONFIG: PanoramaConfig = {
-    schemaVersion: 1,
-    media: {
-        type: "image",
-        url: "",
+    schemaVersion: 2,
+    adapter: "equirectangular",
+    media: { url: "" },
+    equirectangular: {
+        useXmpData: true,
+        shader: false,
+        resolution: 64,
+    },
+    equirectangularTiles: {
+        width: 8192,
+        cols: 8,
+        rows: 4,
+        tileUrl: "",
+        baseUrl: "",
+        useXmpData: true,
+        resolution: 64,
+        showErrorTile: true,
+        baseBlur: true,
+        antialias: true,
+    },
+    equirectangularVideo: {
+        shader: false,
+        resolution: 64,
+    },
+    cubemap: {
+        layout: "separate",
+        faces: { ...EMPTY_FACES },
+        flipTopBottom: false,
+        stripeOrder: [...CUBEMAP_FACES],
+    },
+    cubemapTiles: {
+        faceSize: 4096,
+        nbTiles: 4,
+        tileUrl: "",
+        flipTopBottom: false,
+        showErrorTile: true,
+        baseBlur: true,
+        antialias: true,
+    },
+    cubemapVideo: {
+        equiangular: true,
     },
     view: {
         defaultYaw: 0,
@@ -52,9 +151,7 @@ export const DEFAULT_CONFIG: PanoramaConfig = {
         mousewheel: true,
         touchmoveTwoFingers: false,
     },
-    navbar: {
-        visible: true,
-    },
+    navbar: { visible: true },
     autorotate: {
         enabled: false,
         speed: 2,
@@ -68,6 +165,16 @@ export const DEFAULT_CONFIG: PanoramaConfig = {
 
 const VIDEO_EXTENSIONS = new Set(["m3u8", "mov", "mp4", "m4v", "ogv", "webm"]);
 const IMAGE_EXTENSIONS = new Set(["avif", "bmp", "gif", "jpeg", "jpg", "png", "webp"]);
+const ADAPTERS = new Set<AdapterId>([
+    "equirectangular",
+    "equirectangular-tiles",
+    "equirectangular-video",
+    "cubemap",
+    "cubemap-tiles",
+    "cubemap-video",
+    "dual-fisheye",
+    "dual-fisheye-video",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null;
@@ -93,15 +200,21 @@ function readBoolean(value: Record<string, unknown>, group: string, key: string)
     return typeof candidate === "boolean" ? candidate : undefined;
 }
 
-function readMediaType(value: Record<string, unknown>, group: string, key: string): MediaType | undefined {
-    const candidate = readString(value, group, key);
-    return candidate === "image" || candidate === "video" ? candidate : undefined;
-}
-
 export function cloneConfig(config: PanoramaConfig): PanoramaConfig {
     return {
-        ...config,
-        media: { ...config.media },
+        schemaVersion: 2,
+        adapter: config.adapter,
+        media: { url: config.media.url },
+        equirectangular: { ...config.equirectangular },
+        equirectangularTiles: { ...config.equirectangularTiles },
+        equirectangularVideo: { ...config.equirectangularVideo },
+        cubemap: {
+            ...config.cubemap,
+            faces: { ...config.cubemap.faces },
+            stripeOrder: [...config.cubemap.stripeOrder],
+        },
+        cubemapTiles: { ...config.cubemapTiles },
+        cubemapVideo: { ...config.cubemapVideo },
         view: { ...config.view },
         interaction: { ...config.interaction },
         navbar: { ...config.navbar },
@@ -114,12 +227,10 @@ export function inferMediaType(source: string): MediaType | undefined {
     try {
         const pathname = new URL(source, globalThis.location.href).pathname;
         const extension = pathname.split(".").pop()?.toLowerCase();
-        if (extension && VIDEO_EXTENSIONS.has(extension)) {
+        if (extension && VIDEO_EXTENSIONS.has(extension))
             return "video";
-        }
-        if (extension && IMAGE_EXTENSIONS.has(extension)) {
+        if (extension && IMAGE_EXTENSIONS.has(extension))
             return "image";
-        }
     }
     catch {
         return undefined;
@@ -127,36 +238,126 @@ export function inferMediaType(source: string): MediaType | undefined {
     return undefined;
 }
 
+export function isVideoAdapter(adapter: AdapterId): boolean {
+    return adapter === "equirectangular-video" || adapter === "cubemap-video" || adapter === "dual-fisheye-video";
+}
+
+export function hasConfiguredSource(config: PanoramaConfig): boolean {
+    if (config.adapter === "equirectangular-tiles")
+        return Boolean(config.equirectangularTiles.tileUrl.trim());
+    if (config.adapter === "cubemap-tiles")
+        return Boolean(config.cubemapTiles.tileUrl.trim());
+    if (config.adapter === "cubemap" && config.cubemap.layout === "separate") {
+        return CUBEMAP_FACES.every((face) => Boolean(config.cubemap.faces[face].trim()));
+    }
+    return Boolean(config.media.url.trim());
+}
+
 export function normalizeConfig(value: unknown): PanoramaConfig {
     const normalized = cloneConfig(DEFAULT_CONFIG);
-    if (!isRecord(value)) {
+    if (!isRecord(value))
         return normalized;
-    }
 
-    normalized.media.type = readMediaType(value, "media", "type") ?? normalized.media.type;
+    const adapter = value.adapter;
+    if (typeof adapter === "string" && ADAPTERS.has(adapter as AdapterId)) {
+        normalized.adapter = adapter as AdapterId;
+    }
+    else {
+        // Schema v1 stored only media.type and media.url.
+        normalized.adapter = readString(value, "media", "type") === "video"
+            ? "equirectangular-video"
+            : "equirectangular";
+    }
     normalized.media.url = readString(value, "media", "url") ?? normalized.media.url;
 
-    normalized.view.defaultYaw = readNumber(value, "view", "defaultYaw") ?? normalized.view.defaultYaw;
-    normalized.view.defaultPitch = readNumber(value, "view", "defaultPitch") ?? normalized.view.defaultPitch;
-    normalized.view.defaultZoomLvl = readNumber(value, "view", "defaultZoomLvl") ?? normalized.view.defaultZoomLvl;
-    normalized.view.minFov = readNumber(value, "view", "minFov") ?? normalized.view.minFov;
-    normalized.view.maxFov = readNumber(value, "view", "maxFov") ?? normalized.view.maxFov;
+    const stringFields = [
+        ["equirectangularTiles", "tileUrl"],
+        ["equirectangularTiles", "baseUrl"],
+        ["cubemapTiles", "tileUrl"],
+    ] as const;
+    for (const [group, key] of stringFields) {
+        const found = readString(value, group, key);
+        if (found !== undefined)
+            Object.assign(normalized[group], { [key]: found });
+    }
 
-    normalized.interaction.moveSpeed = readNumber(value, "interaction", "moveSpeed") ?? normalized.interaction.moveSpeed;
-    normalized.interaction.mousemove = readBoolean(value, "interaction", "mousemove") ?? normalized.interaction.mousemove;
-    normalized.interaction.mousewheel = readBoolean(value, "interaction", "mousewheel") ?? normalized.interaction.mousewheel;
-    normalized.interaction.touchmoveTwoFingers = readBoolean(value, "interaction", "touchmoveTwoFingers") ?? normalized.interaction.touchmoveTwoFingers;
+    const numberFields = [
+        ["equirectangular", "resolution"],
+        ["equirectangularTiles", "width"],
+        ["equirectangularTiles", "cols"],
+        ["equirectangularTiles", "rows"],
+        ["equirectangularTiles", "resolution"],
+        ["equirectangularVideo", "resolution"],
+        ["cubemapTiles", "faceSize"],
+        ["cubemapTiles", "nbTiles"],
+        ["view", "defaultYaw"],
+        ["view", "defaultPitch"],
+        ["view", "defaultZoomLvl"],
+        ["view", "minFov"],
+        ["view", "maxFov"],
+        ["interaction", "moveSpeed"],
+        ["autorotate", "speed"],
+        ["autorotate", "delay"],
+    ] as const;
+    for (const [group, key] of numberFields) {
+        const found = readNumber(value, group, key);
+        if (found !== undefined)
+            Object.assign(normalized[group], { [key]: found });
+    }
 
-    normalized.navbar.visible = readBoolean(value, "navbar", "visible") ?? normalized.navbar.visible;
-    normalized.autorotate.enabled = readBoolean(value, "autorotate", "enabled") ?? normalized.autorotate.enabled;
-    normalized.autorotate.speed = readNumber(value, "autorotate", "speed") ?? normalized.autorotate.speed;
-    normalized.autorotate.delay = readNumber(value, "autorotate", "delay") ?? normalized.autorotate.delay;
-    normalized.video.autoplay = readBoolean(value, "video", "autoplay") ?? normalized.video.autoplay;
-    normalized.video.muted = readBoolean(value, "video", "muted") ?? normalized.video.muted;
+    const booleanFields = [
+        ["equirectangular", "useXmpData"],
+        ["equirectangular", "shader"],
+        ["equirectangularTiles", "useXmpData"],
+        ["equirectangularTiles", "showErrorTile"],
+        ["equirectangularTiles", "baseBlur"],
+        ["equirectangularTiles", "antialias"],
+        ["equirectangularVideo", "shader"],
+        ["cubemap", "flipTopBottom"],
+        ["cubemapTiles", "flipTopBottom"],
+        ["cubemapTiles", "showErrorTile"],
+        ["cubemapTiles", "baseBlur"],
+        ["cubemapTiles", "antialias"],
+        ["cubemapVideo", "equiangular"],
+        ["interaction", "mousemove"],
+        ["interaction", "mousewheel"],
+        ["interaction", "touchmoveTwoFingers"],
+        ["navbar", "visible"],
+        ["autorotate", "enabled"],
+        ["video", "autoplay"],
+        ["video", "muted"],
+    ] as const;
+    for (const [group, key] of booleanFields) {
+        const found = readBoolean(value, group, key);
+        if (found !== undefined)
+            Object.assign(normalized[group], { [key]: found });
+    }
 
+    const layout = readString(value, "cubemap", "layout");
+    if (layout === "separate" || layout === "stripe" || layout === "net")
+        normalized.cubemap.layout = layout;
+    const faces = nestedRecord(nestedRecord(value, "cubemap") ?? {}, "faces");
+    if (faces) {
+        for (const face of CUBEMAP_FACES) {
+            if (typeof faces[face] === "string")
+                normalized.cubemap.faces[face] = faces[face];
+        }
+    }
+    const order = nestedRecord(value, "cubemap")?.stripeOrder;
+    if (Array.isArray(order) && order.length === 6 && order.every((face) => CUBEMAP_FACES.includes(face as CubemapFace))) {
+        normalized.cubemap.stripeOrder = [...order] as CubemapFace[];
+    }
     return normalized;
 }
 
 export function resolveMediaUrl(source: string, baseUrl: string): string {
     return new URL(source.trim(), baseUrl).href;
+}
+
+export function applyUrlTemplate(template: string, values: Record<string, number | string>, baseUrl: string): string {
+    let result = template;
+    for (const [name, value] of Object.entries(values)) {
+        result = result.replaceAll(`{${name}}`, String(value));
+    }
+    return resolveMediaUrl(result, baseUrl);
 }

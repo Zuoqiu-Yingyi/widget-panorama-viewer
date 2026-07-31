@@ -1,30 +1,38 @@
 # Panorama Viewer
 
-A 360-degree panoramic image and video viewer for [SiYuan Note](https://github.com/siyuan-note/siyuan).
+A 360-degree panoramic image and video viewer for [SiYuan Note](https://github.com/siyuan-note/siyuan), powered by Photo Sphere Viewer 5.15.0.
 
 [简体中文](./README.zh-CN.md) | English
 
 ## Features
 
-- Preview equirectangular 360-degree images.
-- Preview equirectangular 360-degree videos with play and volume controls.
-- Accept absolute or relative URLs parseable by `new URL()`, such as `assets/panorama.jpg` and `/assets/panorama.jpg`.
-- Configure initial yaw, pitch, zoom, field of view, movement, mouse, touch, and navigation controls.
-- Enable idle automatic rotation with configurable speed and delay.
-- Configure video autoplay and mute behavior.
-- Store independent settings in each widget block's `custom-config` attribute.
-- Follow SiYuan's light and dark appearance.
-- Suggest the media type from common file extensions without overriding your explicit selection.
+The settings panel supports every adapter on the Photo Sphere Viewer adapters page:
+
+- Equirectangular images, tiled equirectangular images, and equirectangular videos
+- Cubemap images, tiled cubemaps, and cubemap videos
+- Dual-fisheye images and dual-fisheye videos
+
+Cubemap images can use six separate face images, one horizontal stripe, or one cross-shaped net. Separate images require URLs for `left`, `front`, `right`, `back`, `top`, and `bottom`. Stripe images support a configurable face order. Top and bottom faces can be flipped when the source orientation requires it.
+
+Tiled adapters currently provide a single-level configuration:
+
+- Equirectangular tile templates must contain `{col}` and `{row}`.
+- Cubemap tile templates must contain `{face}`, `{col}`, and `{row}`.
+- Both templates may also contain the optional `{level}` placeholder (single-level configurations use level `0`).
+
+All source and tile URLs are resolved with `new URL(value, baseUrl)`, so absolute and relative URLs are accepted. External servers must permit cross-origin access.
+
+Other features include configurable initial yaw, pitch, zoom, field of view, interaction and navigation controls; idle automatic rotation; video autoplay and mute behavior; per-widget configuration storage; and automatic light/dark appearance.
 
 ## Usage
 
 1. Insert **Panorama Viewer** from SiYuan's widget menu.
 2. Open the settings button in the upper-right corner.
-3. Select image or video and enter the media URL.
-4. Adjust viewing and interaction options.
+3. Choose an adapter and provide its required URL, cubemap faces, or tile template.
+4. Adjust adapter-specific and common viewer options.
 5. Select **Apply and save**.
 
-External servers must permit cross-origin access to the media. Browser autoplay policies generally require videos to be muted.
+Browser autoplay policies generally require videos to be muted. Tile counts and geometry resolutions must use powers of two; the settings validation reports invalid source, template, face-order, and numeric configurations before saving.
 
 ## Dependencies
 
