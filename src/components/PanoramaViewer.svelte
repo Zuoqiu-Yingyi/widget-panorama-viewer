@@ -42,7 +42,9 @@
                 ]);
                 const plugins: NonNullable<PhotoSphereViewerConfig["plugins"]> = [
                     [AutorotatePlugin, {
-                        autostartDelay: config.autorotate.delay,
+                        autostartDelay: config.autorotate.enabled
+                            ? config.autorotate.delay
+                            : null,
                         autostartOnIdle: config.autorotate.enabled,
                         autorotateSpeed: `${config.autorotate.speed}rpm`,
                     }],
