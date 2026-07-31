@@ -58,6 +58,7 @@
                     minFov: config.view.minFov,
                     mousemove: config.interaction.mousemove,
                     mousewheel: config.interaction.mousewheel,
+                    mousewheelCtrlKey: config.interaction.mousewheelCtrlKey,
                     moveSpeed: config.interaction.moveSpeed,
                     navbar: config.navbar.visible,
                     plugins,

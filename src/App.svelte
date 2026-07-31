@@ -285,8 +285,8 @@
 </main>
 
 {#if drawerOpen}
-    <button class="fixed inset-0 z-40 cursor-default bg-gray-900/50" aria-label={t("close")} onclick={cancelChanges} type="button"></button>
-    <aside class="fixed inset-y-0 right-0 z-50 w-full max-w-[30rem] overflow-hidden bg-white shadow-2xl dark:bg-gray-900" aria-label={t("configuration")}>
+    <button class="fixed inset-0 z-[100] cursor-default bg-gray-900/50" aria-label={t("close")} onclick={cancelChanges} type="button"></button>
+    <aside class="fixed inset-y-0 right-0 z-[101] w-full max-w-[30rem] overflow-hidden bg-white shadow-2xl dark:bg-gray-900" aria-label={t("configuration")}>
         <form class="flex h-full min-h-0 flex-col overflow-hidden" onsubmit={submitConfig}>
             <header class="z-10 flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
                 <h2 class="text-lg font-semibold">{t("configuration")}</h2>
@@ -376,7 +376,8 @@
                     <legend class="px-2 font-medium">{t("interaction")}</legend>
                     <div><Label class="mb-2" for="move-speed">{t("moveSpeed")}</Label><Input id="move-speed" max="10" min="0.1" step="0.1" type="number" bind:value={draft.interaction.moveSpeed} /></div>
                     <Toggle bind:checked={draft.interaction.mousemove}>{t("mousemove")}</Toggle><Toggle bind:checked={draft.interaction.mousewheel}>{t("mousewheel")}</Toggle>
-                    <Toggle bind:checked={draft.interaction.touchmoveTwoFingers}>{t("touchTwoFingers")}</Toggle><Toggle bind:checked={draft.navbar.visible}>{t("navbar")}</Toggle>
+                    <Toggle bind:checked={draft.interaction.mousewheelCtrlKey}>{t("mousewheelCtrlKey")}</Toggle><Toggle bind:checked={draft.interaction.touchmoveTwoFingers}>{t("touchTwoFingers")}</Toggle>
+                    <Toggle bind:checked={draft.navbar.visible}>{t("navbar")}</Toggle>
                 </fieldset>
 
                 <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">

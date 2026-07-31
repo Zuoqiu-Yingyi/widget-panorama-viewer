@@ -70,6 +70,7 @@ export interface PanoramaConfig {
         moveSpeed: number;
         mousemove: boolean;
         mousewheel: boolean;
+        mousewheelCtrlKey: boolean;
         touchmoveTwoFingers: boolean;
     };
     navbar: {
@@ -148,7 +149,8 @@ export const DEFAULT_CONFIG: PanoramaConfig = {
     interaction: {
         moveSpeed: 1,
         mousemove: true,
-        mousewheel: false,
+        mousewheel: true,
+        mousewheelCtrlKey: true,
         touchmoveTwoFingers: true,
     },
     navbar: { visible: true },
@@ -321,6 +323,7 @@ export function normalizeConfig(value: unknown): PanoramaConfig {
         ["cubemapVideo", "equiangular"],
         ["interaction", "mousemove"],
         ["interaction", "mousewheel"],
+        ["interaction", "mousewheelCtrlKey"],
         ["interaction", "touchmoveTwoFingers"],
         ["navbar", "visible"],
         ["autorotate", "enabled"],
