@@ -144,7 +144,7 @@ export const DEFAULT_CONFIG: PanoramaConfig = {
         defaultPitch: 0,
         defaultZoomLvl: 50,
         minFov: 30,
-        maxFov: 90,
+        maxFov: 150,
     },
     interaction: {
         moveSpeed: 1,

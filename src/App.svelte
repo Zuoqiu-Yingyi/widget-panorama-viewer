@@ -164,8 +164,8 @@
             && Math.abs(config.view.defaultYaw) <= 360
             && Math.abs(config.view.defaultPitch) <= 90
             && config.view.defaultZoomLvl >= 0 && config.view.defaultZoomLvl <= 100
-            && config.view.minFov >= 1 && config.view.minFov <= 179
-            && config.view.maxFov >= 1 && config.view.maxFov <= 179
+            && config.view.minFov >= 1 && config.view.minFov <= 180
+            && config.view.maxFov >= 1 && config.view.maxFov <= 180
             && config.interaction.moveSpeed >= 0.1 && config.interaction.moveSpeed <= 10
             && Math.abs(config.autorotate.speed) <= 20 && config.autorotate.speed !== 0
             && config.autorotate.delay >= 0 && config.autorotate.delay <= 60000;
@@ -368,8 +368,8 @@
                     <div><Label class="mb-2" for="yaw">{t("yaw")}</Label><Input id="yaw" max="360" min="-360" step="1" type="number" bind:value={draft.view.defaultYaw} /></div>
                     <div><Label class="mb-2" for="pitch">{t("pitch")}</Label><Input id="pitch" max="90" min="-90" step="1" type="number" bind:value={draft.view.defaultPitch} /></div>
                     <div><Label class="mb-2" for="zoom">{t("zoom")}</Label><Input id="zoom" max="100" min="0" step="1" type="number" bind:value={draft.view.defaultZoomLvl} /></div><div></div>
-                    <div><Label class="mb-2" for="min-fov">{t("minFov")}</Label><Input id="min-fov" max="179" min="1" step="1" type="number" bind:value={draft.view.minFov} /></div>
-                    <div><Label class="mb-2" for="max-fov">{t("maxFov")}</Label><Input id="max-fov" max="179" min="1" step="1" type="number" bind:value={draft.view.maxFov} /></div>
+                    <div><Label class="mb-2" for="min-fov">{t("minFov")}</Label><Input id="min-fov" max="180" min="1" step="1" type="number" bind:value={draft.view.minFov} /></div>
+                    <div><Label class="mb-2" for="max-fov">{t("maxFov")}</Label><Input id="max-fov" max="180" min="1" step="1" type="number" bind:value={draft.view.maxFov} /></div>
                 </fieldset>
 
                 <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
