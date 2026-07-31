@@ -13,7 +13,7 @@
         OVERLAY_POSITIONS,
         resolveMediaUrl,
     } from "./lib/config";
-    import { createTranslator } from "./lib/i18n";
+    import { createTranslator, getViewerLanguage } from "./lib/i18n";
 
     import PanoramaViewer from "./components/PanoramaViewer.svelte";
 
@@ -27,6 +27,7 @@
     const initialContext = untrack(() => context);
     const initialConfig = cloneConfig(initialContext.config);
     const t = createTranslator(initialContext.locale);
+    const viewerLanguage = getViewerLanguage(initialContext.locale);
 
     let activeConfig = $state(cloneConfig(initialConfig));
     let draft = $state(cloneConfig(initialConfig));
@@ -312,6 +313,7 @@
             viewerKey += 1;
             drawerOpen = false;
             notice = t("saved");
+            setTimeout(() => notice = "", 7000);
         }
         catch (error) {
             console.error(error);
@@ -339,6 +341,7 @@
                     notice = t("saveFailed");
                     noticeIsError = true;
                 }
+                setTimeout(() => notice = "", 7000);
             });
         return interactionSaveQueue;
     }
@@ -377,11 +380,11 @@
                     touchmoveTwoFingers: t("touchTwoFingers"),
                 }}
                 loadingLabel={t("loading")}
-                nativeSettingsLabel={t("nativeSettings")}
                 onInteractionChange={persistInteraction}
                 onOpenSettings={() => drawerOpen = true}
                 onViewerError={(message) => viewerError = message}
                 openSettingsLabel={t("openSettings")}
+                {viewerLanguage}
             />
         {/key}
     {:else}
@@ -400,14 +403,14 @@
 
 {#if drawerOpen}
     <button class="fixed inset-0 z-[100] cursor-default bg-gray-900/50" aria-label={t("close")} onclick={cancelChanges} type="button"></button>
-    <aside class="fixed inset-y-0 right-0 z-[101] w-full max-w-[30rem] overflow-hidden bg-white shadow-2xl dark:bg-gray-900" aria-label={t("configuration")}>
-        <form class="flex h-full min-h-0 flex-col overflow-hidden" onsubmit={submitConfig}>
-            <header class="z-10 flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+    <aside class="fixed inset-y-0 right-0 z-[101] flex min-h-0 w-full max-w-[30rem] flex-col bg-white shadow-2xl dark:bg-gray-900" aria-label={t("configuration")}>
+        <form class="settings-form" onsubmit={submitConfig}>
+            <header class="z-10 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-2 dark:border-gray-700 dark:bg-gray-900">
                 <h2 class="text-lg font-semibold">{t("configuration")}</h2>
                 <button class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" aria-label={t("close")} onclick={cancelChanges} type="button"><svg class="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
             </header>
 
-            <div class="min-h-0 flex-1 space-y-5 overflow-y-scroll p-5 [overflow-anchor:none] [scrollbar-gutter:stable]">
+            <div class="settings-scroll space-y-5 p-5">
                 {#if errorMessage}<div class="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{errorMessage}</div>{/if}
 
                 <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
@@ -627,9 +630,39 @@
                     {/if}
                 </fieldset>
             </div>
-            <footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+            <footer class="flex flex-wrap justify-end gap-2 border-t border-gray-200 bg-white px-5 py-2 dark:border-gray-700 dark:bg-gray-900">
                 <Button color="alternative" onclick={resetDraft} type="button">{t("reset")}</Button><Button color="alternative" onclick={cancelChanges} type="button">{t("cancel")}</Button><Button disabled={saving} loading={saving} type="submit">{t("apply")}</Button>
             </footer>
         </form>
     </aside>
 {/if}
+
+<style>
+    .settings-form {
+        box-sizing: border-box;
+        display: flex;
+        flex: 1 1 0%;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .settings-form > header,
+    .settings-form > footer {
+        box-sizing: border-box;
+        flex: 0 0 auto;
+    }
+
+    .settings-scroll {
+        box-sizing: border-box;
+        flex: 1 1 0;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        overflow-anchor: none;
+        scrollbar-gutter: stable;
+    }
+</style>

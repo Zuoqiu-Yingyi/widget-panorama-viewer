@@ -8,6 +8,7 @@
     import type { SettingsPlugin } from "@photo-sphere-viewer/settings-plugin";
 
     import type { PanoramaConfig } from "../lib/config";
+    import type { ViewerLanguage } from "../lib/i18n";
 
     type InteractionKey = "mousemove" | "mousewheel" | "mousewheelCtrlKey" | "touchmoveTwoFingers";
 
@@ -15,7 +16,7 @@
         baseUrl: string;
         config: PanoramaConfig;
         loadingLabel: string;
-        nativeSettingsLabel: string;
+        viewerLanguage: ViewerLanguage;
         openSettingsLabel: string;
         interactionLabels: Record<InteractionKey, string>;
         onOpenSettings: () => void;
@@ -27,7 +28,7 @@
         baseUrl,
         config,
         loadingLabel,
-        nativeSettingsLabel,
+        viewerLanguage,
         openSettingsLabel,
         interactionLabels,
         onOpenSettings,
@@ -68,7 +69,7 @@
                 };
 
                 if (config.navbar.visible) {
-                    navbar.push("zoom", "move", "download", "autorotate");
+                    navbar.push("autorotate", "zoom", "move", "download");
                     if (config.navbar.description.trim())
                         navbar.push("description");
                     navbar.push("caption");
@@ -179,7 +180,7 @@
                     defaultPitch: `${config.view.defaultPitch}deg`,
                     defaultYaw: `${config.view.defaultYaw}deg`,
                     defaultZoomLvl: config.view.defaultZoomLvl,
-                    lang: { settings: nativeSettingsLabel },
+                    lang: viewerLanguage,
                     maxFov: config.view.maxFov,
                     minFov: config.view.minFov,
                     mousemove: config.interaction.mousemove,
