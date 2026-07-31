@@ -1,27 +1,46 @@
-# Panorama Viewer
+> **Git submodule of the [siyuan-packages-monorepo](https://github.com/Zuoqiu-Yingyi/siyuan-packages-monorepo) at [/workspace/widgets/panorama-viewer](https://github.com/Zuoqiu-Yingyi/siyuan-packages-monorepo/tree/main/workspace/widgets/panorama-viewer)**
 
-A [SiYuan Note](https://github.com/siyuan-note/siyuan) widget for previewing 360-degree panoramic images and videos, powered by [Photo Sphere Viewer](https://photo-sphere-viewer.js.org/).
+<div align="center">
+<img alt="icon" src="./public/icon.png" style="width: 8em; height: 8em;">
 
-[简体中文](./public/README.zh-CN.md) | [English](./public/README.md)
+---
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/Zuoqiu-Yingyi/widget-panorama-viewer?include_prereleases&style=flat-square)](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/releases/latest)
+[![GitHub Release Date](https://img.shields.io/github/release-date/Zuoqiu-Yingyi/widget-panorama-viewer?style=flat-square)](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/releases/latest)
+[![GitHub License](https://img.shields.io/github/license/Zuoqiu-Yingyi/widget-panorama-viewer?style=flat-square)](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/blob/main/LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Zuoqiu-Yingyi/widget-panorama-viewer?style=flat-square)](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/commits/main)
+![GitHub repo size](https://img.shields.io/github/repo-size/Zuoqiu-Yingyi/widget-panorama-viewer?style=flat-square)
+![hits](https://hits.b3log.org/Zuoqiu-Yingyi/widget-panorama-viewer.svg)
+[![GitHub all releases](https://img.shields.io/github/downloads/Zuoqiu-Yingyi/widget-panorama-viewer/total?style=flat-square)](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/releases)
+---
 
-## Development
+</div>
 
-This package is developed from the parent monorepo workspace.
+## USER GUIDE
 
-```bash
-pnpm -C workspace install
-pnpm -C workspace --filter panorama-viewer run dev
-pnpm -C workspace --filter panorama-viewer run check:svelte
-pnpm -C workspace --filter panorama-viewer run lint
-pnpm -C workspace --filter panorama-viewer run build
-```
+[简体中文](./public/README.zh-CN.md) \| [English](./public/README.md)
 
-For development outside a SiYuan widget iframe, copy `.env.example` to `.env.local` and configure the SiYuan service URL and API token. Saving requires a valid widget block ID supplied by SiYuan or the `?id=<block-id>` query parameter.
+## DEVELOPER GUIDE
 
-## Configuration storage
+### RELEASE STEPS
 
-Each widget instance stores its configuration as JSON in the widget block's `custom-config` attribute. The schema is versioned with `schemaVersion` for future migrations.
+1. Update the version number in `<subrepo-root-dir>/package.json` and `<subrepo-root-dir>/public/plugin.json`, then commit the changes in this sub-repository on the `dev` branch.
+2. Push the `dev` branch to `origin`.
+   ```bash
+   git push origin dev
+   ```
+3. Update the submodule pointer in [monorepo](https://github.com/Zuoqiu-Yingyi/siyuan-packages-monorepo) to this sub-repository commit, then commit the pointer change in monorepo.
+   ```bash
+   cd <monorepo-root-dir>
+   git add workspace/widgets/panorama-viewer
+   git commit -m "chore(submodule): update panorama-viewer"
+   ```
+4. Create a pull request from `dev` branch to `main` branch in sub-repository.
+5. Merge the pull request.
+6. Await for the CD workflow `release-please.yml` to complete, it will create a _release pull request_ in sub-repository.
+7. Merge the _release pull request_, it will create a new _pre-release_ with current [changelog](./CHANGELOG.md) and a new _tag_ with [semantic version](https://semver.org/) in sub-repository.
+8. Await for the CD workflow `build.yml` to complete, it will update the distribution files to `publish` branch in sub-repository.
+9. Await for the CD workflow `release-distribution.yml` to complete, it will create a new _pre-release_ with an asset named `package.zip` and a new _tag_ with timestamp in sub-repository.
 
-## License
+## CHANGELOG
 
-[AGPL-3.0](./LICENSE)
+[CHANGE LOG](./CHANGELOG.md)
