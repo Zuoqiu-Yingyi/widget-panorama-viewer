@@ -29,7 +29,6 @@
         "@photo-sphere-viewer/stereo-plugin": "^5.15.0",
         "@photo-sphere-viewer/video-plugin": "^5.15.0",
         "@photo-sphere-viewer/visible-range-plugin": "^5.15.0",
-        "@siyuan-community/siyuan-sdk": "^0.3.17",
         "flowbite-svelte": "^1.33.1"
     },
     "devDependencies": {
