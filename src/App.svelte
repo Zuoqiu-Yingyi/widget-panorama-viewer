@@ -287,13 +287,13 @@
 {#if drawerOpen}
     <button class="fixed inset-0 z-40 cursor-default bg-gray-900/50" aria-label={t("close")} onclick={cancelChanges} type="button"></button>
     <aside class="fixed inset-y-0 right-0 z-50 w-full max-w-[30rem] overflow-hidden bg-white shadow-2xl dark:bg-gray-900" aria-label={t("configuration")}>
-        <form class="flex h-full flex-col" onsubmit={submitConfig}>
-            <header class="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+        <form class="flex h-full min-h-0 flex-col overflow-hidden" onsubmit={submitConfig}>
+            <header class="z-10 flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
                 <h2 class="text-lg font-semibold">{t("configuration")}</h2>
                 <button class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800" aria-label={t("close")} onclick={cancelChanges} type="button"><svg class="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
             </header>
 
-            <div class="flex-1 space-y-5 overflow-y-auto p-5">
+            <div class="min-h-0 flex-1 space-y-5 overflow-y-scroll p-5 [overflow-anchor:none] [scrollbar-gutter:stable]">
                 {#if errorMessage}<div class="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">{errorMessage}</div>{/if}
 
                 <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
@@ -387,7 +387,7 @@
                     </div>
                 </fieldset>
             </div>
-            <footer class="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
+            <footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-900">
                 <Button color="alternative" onclick={resetDraft} type="button">{t("reset")}</Button><Button color="alternative" onclick={cancelChanges} type="button">{t("cancel")}</Button><Button disabled={saving} loading={saving} type="submit">{t("apply")}</Button>
             </footer>
         </form>

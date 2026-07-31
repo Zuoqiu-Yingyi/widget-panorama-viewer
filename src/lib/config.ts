@@ -148,8 +148,8 @@ export const DEFAULT_CONFIG: PanoramaConfig = {
     interaction: {
         moveSpeed: 1,
         mousemove: true,
-        mousewheel: true,
-        touchmoveTwoFingers: false,
+        mousewheel: false,
+        touchmoveTwoFingers: true,
     },
     navbar: { visible: true },
     autorotate: {
