@@ -1,6 +1,19 @@
-import en from "../i18n/en.json";
-import zhCN from "../i18n/zh-CN.json";
-import zhTW from "../i18n/zh-TW.json";
+import {
+    i18nCheck,
+    i18nChecks,
+} from "@workspace/types/siyuan/i18n";
+
+import en from "@/i18n/en.json";
+import zh_Hans from "@/i18n/zh-CN.json";
+import zh_Hant from "@/i18n/zh-TW.json";
+
+export type I18N = typeof zh_Hans;
+
+i18nChecks([
+    i18nCheck<I18N, typeof en>(),
+    i18nCheck<I18N, typeof zh_Hant>(),
+    i18nCheck<I18N, typeof zh_Hans>(),
+]);
 
 export type Locale = "en" | "zh-CN" | "zh-TW";
 export type MessageKey = keyof typeof en.messages;
@@ -13,8 +26,8 @@ interface TranslationCatalog {
 
 const catalogs: Record<Locale, TranslationCatalog> = {
     en,
-    "zh-CN": zhCN,
-    "zh-TW": zhTW,
+    "zh-CN": zh_Hans,
+    "zh-TW": zh_Hant,
 };
 
 export function normalizeLocale(locale: string | undefined): Locale {
