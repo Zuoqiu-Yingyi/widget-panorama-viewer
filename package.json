@@ -29,6 +29,7 @@
         "@photo-sphere-viewer/stereo-plugin": "^5.15.0",
         "@photo-sphere-viewer/video-plugin": "^5.15.0",
         "@photo-sphere-viewer/visible-range-plugin": "^5.15.0",
+        "@workspace/types": "workspace:^",
         "flowbite-svelte": "^1.33.1"
     },
     "devDependencies": {
