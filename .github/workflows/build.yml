@@ -1,0 +1,66 @@
+# 构建 | Build
+
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: 24
+  PNPM_VERSION: 11.17.0
+  WORKSPACE_PACKAGE: panorama-viewer
+  PACKAGE_PATH: workspace/widgets/panorama-viewer
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v7
+        with:
+          repository: Zuoqiu-Yingyi/siyuan-packages-monorepo
+          ref: main
+          submodules: recursive
+
+      - name: Checkout package source
+        uses: actions/checkout@v7
+        with:
+          path: ${{ env.PACKAGE_PATH }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: workspace/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm -C workspace install --frozen-lockfile
+
+      - name: Check Svelte
+        run: pnpm -C workspace --filter ${{ env.WORKSPACE_PACKAGE }} run check:svelte
+
+      - name: Lint
+        run: pnpm -C workspace --filter ${{ env.WORKSPACE_PACKAGE }} run lint
+
+      - name: Build
+        run: pnpm -C workspace --filter ${{ env.WORKSPACE_PACKAGE }} run build
+
+      - name: Publish distribution branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: publish
+          publish_dir: ${{ env.PACKAGE_PATH }}/dist
+          force_orphan: true

@@ -1,0 +1,52 @@
+# 发行构建产物 | Release the distribution
+
+name: release-distribution
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - build
+    types:
+      - completed
+  push:
+    branches:
+      - publish
+
+permissions:
+  contents: write
+
+jobs:
+  release-distribution:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: publish
+
+      - name: Package
+        run: git archive -o ./package.zip HEAD
+
+      - name: Get latest release
+        uses: pozetroninc/github-action-get-latest-release@master
+        id: latest-release
+        with:
+          repository: ${{ github.repository }}
+          excludes: draft
+
+      - name: Get timestamp
+        uses: nanzm/get-time-action@master
+        id: timestamp
+        with:
+          timeZone: UTC+8
+          format: YYYYMMDDHHmmss
+
+      - name: Release distribution
+        uses: softprops/action-gh-release@v3
+        with:
+          body: ${{ steps.latest-release.outputs.description }}
+          prerelease: true
+          tag_name: ${{ steps.latest-release.outputs.release }}+${{ steps.timestamp.outputs.time }}
+          target_commitish: publish
+          files: package.zip
