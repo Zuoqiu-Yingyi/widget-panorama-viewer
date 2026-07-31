@@ -22,12 +22,14 @@ Tiled adapters currently provide a single-level configuration:
 
 All source and tile URLs are resolved with `new URL(value, baseUrl)`, so absolute and relative URLs are accepted. External servers must permit cross-origin access.
 
-Other features include configurable initial yaw, pitch, zoom, field of view, interaction and navigation controls; idle automatic rotation; video autoplay and mute behavior; per-widget configuration storage; and automatic light/dark appearance.
+Optional Photo Sphere Viewer plugins include Compass, Gyroscope, image Map, geographic Plan (OpenStreetMap by default), Stereo, and Visible Range. Plugin code is loaded only when enabled; Stereo automatically loads its Gyroscope dependency. Map images and Plan tile templates accept absolute or relative URLs (Plan templates retain `{z}`, `{x}`, and `{y}`).
+
+Other features include configurable initial yaw, pitch, zoom, field of view, movement speed and navigation controls; navbar caption and description; idle automatic rotation; video autoplay and mute behavior; per-widget configuration storage; and automatic light/dark appearance. Drag, wheel, Ctrl+wheel, and two-finger interaction switches live in Photo Sphere Viewer's native **Settings** menu and save immediately.
 
 ## Usage
 
 1. Insert **Panorama Viewer** from SiYuan's widget menu.
-2. Open the settings button in the upper-right corner.
+2. Select the widget settings button in the native viewer navbar. This button remains available even when ordinary navbar controls are hidden.
 3. Choose an adapter and provide its required URL, cubemap faces, or tile template.
 4. Adjust adapter-specific and common viewer options.
 5. Select **Apply and save**.

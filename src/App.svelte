@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Button, Input, Label, Select, Toggle } from "flowbite-svelte";
+    import { Button, Input, Label, Select, Textarea, Toggle } from "flowbite-svelte";
     import { untrack } from "svelte";
 
     import {
@@ -10,6 +10,7 @@
         hasConfiguredSource,
         inferMediaType,
         isVideoAdapter,
+        OVERLAY_POSITIONS,
         resolveMediaUrl,
     } from "./lib/config";
     import { createTranslator } from "./lib/i18n";
@@ -34,6 +35,7 @@
     let viewerKey = $state(0);
     let saving = $state(false);
     let notice = $state("");
+    let noticeIsError = $state(false);
     let errorMessage = $state("");
     let viewerError = $state("");
     const configured = $derived(hasConfiguredSource(activeConfig));
@@ -54,6 +56,9 @@
         { value: "stripe", name: t("layoutStripe") },
         { value: "net", name: t("layoutNet") },
     ];
+    const positions = OVERLAY_POSITIONS.map((value) => ({ value, name: t(value.replace(" ", "") as MessageKey) }));
+    const mapShapes = [{ value: "round", name: t("round") }, { value: "square", name: t("square") }];
+    const moveModes = [{ value: "smooth", name: t("smooth") }, { value: "fast", name: t("fast") }];
 
     function usesSingleUrl(config: PanoramaConfig): boolean {
         return config.adapter !== "equirectangular-tiles"
@@ -143,6 +148,31 @@
             }
         }
 
+        if (config.map.enabled && !validUrl(config.map.imageUrl))
+            return t("mapImageRequired");
+        if (config.plan.enabled) {
+            if (!hasPlaceholders(config.plan.layer.urlTemplate, ["z", "x", "y"]))
+                return t("invalidPlanTemplate");
+            try {
+                resolveMediaUrl(config.plan.layer.urlTemplate, context.baseUrl);
+            }
+            catch {
+                return t("invalidUrl");
+            }
+        }
+        if (config.visibleRange.enabled && !config.visibleRange.usePanoData
+            && !config.visibleRange.horizontalEnabled && !config.visibleRange.verticalEnabled) {
+            return t("rangeRequired");
+        }
+        if (config.visibleRange.enabled && config.visibleRange.horizontalEnabled
+            && config.visibleRange.horizontalMin > config.visibleRange.horizontalMax) {
+            return t("invalidRange");
+        }
+        if (config.visibleRange.enabled && config.visibleRange.verticalEnabled
+            && config.visibleRange.verticalMin > config.visibleRange.verticalMax) {
+            return t("invalidRange");
+        }
+
         const finiteValues = [
             config.view.defaultYaw,
             config.view.defaultPitch,
@@ -153,6 +183,36 @@
             config.autorotate.speed,
             config.autorotate.delay,
         ];
+        if (config.map.enabled) {
+            finiteValues.push(
+                config.map.centerX,
+                config.map.centerY,
+                config.map.rotation,
+                config.map.pinSize,
+                config.map.coneSize,
+                config.map.defaultZoom,
+                config.map.minZoom,
+                config.map.maxZoom,
+            );
+        }
+        if (config.plan.enabled) {
+            finiteValues.push(
+                config.plan.latitude,
+                config.plan.longitude,
+                config.plan.altitude,
+                config.plan.bearing,
+                config.plan.pinSize,
+                config.plan.defaultZoom,
+            );
+        }
+        if (config.visibleRange.enabled) {
+            finiteValues.push(
+                config.visibleRange.horizontalMin,
+                config.visibleRange.horizontalMax,
+                config.visibleRange.verticalMin,
+                config.visibleRange.verticalMax,
+            );
+        }
         let validAdapterResolution = true;
         if (config.adapter === "equirectangular")
             validAdapterResolution = isPowerOfTwo(config.equirectangular.resolution);
@@ -168,7 +228,21 @@
             && config.view.maxFov >= 1 && config.view.maxFov <= 180
             && config.interaction.moveSpeed >= 0.1 && config.interaction.moveSpeed <= 10
             && Math.abs(config.autorotate.speed) <= 20 && config.autorotate.speed !== 0
-            && config.autorotate.delay >= 0 && config.autorotate.delay <= 60000;
+            && config.autorotate.delay >= 0 && config.autorotate.delay <= 60000
+            && (!config.map.enabled || (
+                config.map.pinSize > 0 && config.map.coneSize > 0
+                && config.map.minZoom > 0 && config.map.minZoom <= config.map.defaultZoom
+                && config.map.defaultZoom <= config.map.maxZoom
+            ))
+            && (!config.plan.enabled || (
+                config.plan.latitude >= -90 && config.plan.latitude <= 90
+                && config.plan.longitude >= -180 && config.plan.longitude <= 180
+                && config.plan.pinSize > 0 && config.plan.defaultZoom >= 0 && config.plan.defaultZoom <= 22
+            ))
+            && (!config.visibleRange.enabled || (
+                config.visibleRange.horizontalMin >= -360 && config.visibleRange.horizontalMax <= 360
+                && config.visibleRange.verticalMin >= -90 && config.visibleRange.verticalMax <= 90
+            ));
         if (!valid)
             return t("invalidNumber");
         if (config.view.minFov > config.view.maxFov)
@@ -193,6 +267,12 @@
         config.interaction.moveSpeed = Number(config.interaction.moveSpeed);
         config.autorotate.speed = Number(config.autorotate.speed);
         config.autorotate.delay = Number(config.autorotate.delay);
+        for (const key of ["centerX", "centerY", "rotation", "pinSize", "coneSize", "defaultZoom", "minZoom", "maxZoom"] as const)
+            config.map[key] = Number(config.map[key]);
+        for (const key of ["latitude", "longitude", "altitude", "bearing", "pinSize", "defaultZoom"] as const)
+            config.plan[key] = Number(config.plan[key]);
+        for (const key of ["horizontalMin", "horizontalMax", "verticalMin", "verticalMax"] as const)
+            config.visibleRange[key] = Number(config.visibleRange[key]);
     }
 
     function trimSources(config: PanoramaConfig): void {
@@ -200,12 +280,17 @@
         config.equirectangularTiles.tileUrl = config.equirectangularTiles.tileUrl.trim();
         config.equirectangularTiles.baseUrl = config.equirectangularTiles.baseUrl.trim();
         config.cubemapTiles.tileUrl = config.cubemapTiles.tileUrl.trim();
+        config.map.imageUrl = config.map.imageUrl.trim();
+        config.plan.layer.urlTemplate = config.plan.layer.urlTemplate.trim();
         for (const face of CUBEMAP_FACES) config.cubemap.faces[face] = config.cubemap.faces[face].trim();
     }
+
+    let interactionSaveQueue: Promise<void> = Promise.resolve();
 
     async function applyConfig(): Promise<void> {
         errorMessage = "";
         notice = "";
+        noticeIsError = false;
         viewerError = "";
         const nextConfig = cloneConfig(draft);
         nextConfig.adapter = draft.adapter as AdapterId;
@@ -219,6 +304,7 @@
         }
         saving = true;
         try {
+            await interactionSaveQueue;
             await context.saveConfig(nextConfig);
             activeConfig = cloneConfig(nextConfig);
             draft = cloneConfig(nextConfig);
@@ -234,6 +320,27 @@
         finally {
             saving = false;
         }
+    }
+
+    function persistInteraction(key: "mousemove" | "mousewheel" | "mousewheelCtrlKey" | "touchmoveTwoFingers", value: boolean): Promise<void> {
+        activeConfig.interaction[key] = value;
+        draft.interaction[key] = value;
+        const snapshot = cloneConfig(activeConfig);
+        interactionSaveQueue = interactionSaveQueue
+            .catch(() => undefined)
+            .then(async () => {
+                try {
+                    await context.saveConfig(snapshot);
+                    notice = t("saved");
+                    noticeIsError = false;
+                }
+                catch (error) {
+                    console.error(error);
+                    notice = t("saveFailed");
+                    noticeIsError = true;
+                }
+            });
+        return interactionSaveQueue;
     }
 
     function cancelChanges(): void {
@@ -263,8 +370,18 @@
             <PanoramaViewer
                 baseUrl={context.baseUrl}
                 config={activeConfig}
+                interactionLabels={{
+                    mousemove: t("mousemove"),
+                    mousewheel: t("mousewheel"),
+                    mousewheelCtrlKey: t("mousewheelCtrlKey"),
+                    touchmoveTwoFingers: t("touchTwoFingers"),
+                }}
                 loadingLabel={t("loading")}
+                nativeSettingsLabel={t("nativeSettings")}
+                onInteractionChange={persistInteraction}
+                onOpenSettings={() => drawerOpen = true}
                 onViewerError={(message) => viewerError = message}
+                openSettingsLabel={t("openSettings")}
             />
         {/key}
     {:else}
@@ -277,10 +394,7 @@
         </section>
     {/if}
 
-    <Button class="absolute right-4 top-4 z-20 shadow-lg" aria-label={t("openSettings")} color="dark" onclick={() => drawerOpen = true} pill title={t("openSettings")}>
-        <svg class="h-5 w-5" aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></svg>
-    </Button>
-    {#if notice}<div class="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-lg bg-green-700 px-4 py-2 text-sm text-white shadow-lg">{notice}</div>{/if}
+    {#if notice}<div class={`absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-lg px-4 py-2 text-sm text-white shadow-lg ${noticeIsError ? "bg-red-700" : "bg-green-700"}`}>{notice}</div>{/if}
     {#if viewerError}<div class="absolute bottom-4 left-4 right-4 z-20 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 shadow-lg dark:border-red-800 dark:bg-red-950 dark:text-red-200"><strong>{t("viewerError")}:</strong> {t("loadFailed")}<span class="block truncate opacity-70" title={viewerError}>{viewerError}</span></div>{/if}
 </main>
 
@@ -375,9 +489,14 @@
                 <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
                     <legend class="px-2 font-medium">{t("interaction")}</legend>
                     <div><Label class="mb-2" for="move-speed">{t("moveSpeed")}</Label><Input id="move-speed" max="10" min="0.1" step="0.1" type="number" bind:value={draft.interaction.moveSpeed} /></div>
-                    <Toggle bind:checked={draft.interaction.mousemove}>{t("mousemove")}</Toggle><Toggle bind:checked={draft.interaction.mousewheel}>{t("mousewheel")}</Toggle>
-                    <Toggle bind:checked={draft.interaction.mousewheelCtrlKey}>{t("mousewheelCtrlKey")}</Toggle><Toggle bind:checked={draft.interaction.touchmoveTwoFingers}>{t("touchTwoFingers")}</Toggle>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{t("nativeInteractionHint")}</p>
+                </fieldset>
+
+                <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                    <legend class="px-2 font-medium">{t("navigation")}</legend>
                     <Toggle bind:checked={draft.navbar.visible}>{t("navbar")}</Toggle>
+                    <div><Label class="mb-2" for="caption">{t("caption")}</Label><Textarea id="caption" rows={2} bind:value={draft.navbar.caption} /></div>
+                    <div><Label class="mb-2" for="description">{t("description")}</Label><Textarea id="description" rows={3} bind:value={draft.navbar.description} /></div>
                 </fieldset>
 
                 <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
@@ -386,6 +505,126 @@
                         <div><Label class="mb-2" for="rotate-speed">{t("autorotateSpeed")}</Label><Input id="rotate-speed" max="20" min="-20" step="0.1" type="number" bind:value={draft.autorotate.speed} /></div>
                         <div><Label class="mb-2" for="rotate-delay">{t("autorotateDelay")}</Label><Input id="rotate-delay" max="60000" min="0" step="100" type="number" bind:value={draft.autorotate.delay} /></div>
                     </div>
+                </fieldset>
+
+                <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t("plugins")}</h3>
+
+                <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                    <legend class="px-2 font-medium">{t("compass")}</legend>
+                    <Toggle bind:checked={draft.compass.enabled}>{t("enabled")}</Toggle>
+                    {#if draft.compass.enabled}
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><Label class="mb-2" for="compass-size">{t("size")}</Label><Input id="compass-size" type="text" bind:value={draft.compass.size} /></div>
+                            <div><Label class="mb-2" for="compass-position">{t("position")}</Label><Select id="compass-position" items={positions} bind:value={draft.compass.position} /></div>
+                        </div>
+                        <div><Label class="mb-2" for="compass-cone">{t("coneColor")}</Label><Input id="compass-cone" type="text" bind:value={draft.compass.coneColor} /></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><Label class="mb-2" for="navigation-color">{t("navigationColor")}</Label><Input id="navigation-color" type="text" bind:value={draft.compass.navigationColor} /></div>
+                            <div><Label class="mb-2" for="hotspot-color">{t("hotspotColor")}</Label><Input id="hotspot-color" type="text" bind:value={draft.compass.hotspotColor} /></div>
+                        </div>
+                        <Toggle bind:checked={draft.compass.navigation}>{t("compassNavigation")}</Toggle>
+                        <Toggle bind:checked={draft.compass.resetPitch}>{t("resetPitch")}</Toggle>
+                    {/if}
+                </fieldset>
+
+                <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                    <legend class="px-2 font-medium">{t("gyroscope")}</legend>
+                    <Toggle bind:checked={draft.gyroscope.enabled}>{t("enabled")}</Toggle>
+                    {#if draft.gyroscope.enabled}
+                        <div><Label class="mb-2" for="gyro-mode">{t("moveMode")}</Label><Select id="gyro-mode" items={moveModes} bind:value={draft.gyroscope.moveMode} /></div>
+                        <Toggle bind:checked={draft.gyroscope.touchmove}>{t("gyroscopeTouchmove")}</Toggle>
+                        <Toggle bind:checked={draft.gyroscope.roll}>{t("roll")}</Toggle>
+                        <Toggle bind:checked={draft.gyroscope.absolutePosition}>{t("absolutePosition")}</Toggle>
+                    {/if}
+                </fieldset>
+
+                <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                    <legend class="px-2 font-medium">{t("mapPlugin")}</legend>
+                    <Toggle bind:checked={draft.map.enabled}>{t("enabled")}</Toggle>
+                    {#if draft.map.enabled}
+                        <div><Label class="mb-2" for="map-image">{t("mapImageUrl")}</Label><Input id="map-image" required type="text" bind:value={draft.map.imageUrl} /></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><Label class="mb-2" for="map-x">{t("centerX")}</Label><Input id="map-x" type="number" bind:value={draft.map.centerX} /></div>
+                            <div><Label class="mb-2" for="map-y">{t("centerY")}</Label><Input id="map-y" type="number" bind:value={draft.map.centerY} /></div>
+                            <div><Label class="mb-2" for="map-rotation">{t("rotation")}</Label><Input id="map-rotation" type="number" bind:value={draft.map.rotation} /></div>
+                            <div><Label class="mb-2" for="map-shape">{t("shape")}</Label><Select id="map-shape" items={mapShapes} bind:value={draft.map.shape} /></div>
+                            <div><Label class="mb-2" for="map-size">{t("size")}</Label><Input id="map-size" type="text" bind:value={draft.map.size} /></div>
+                            <div><Label class="mb-2" for="map-position">{t("position")}</Label><Select id="map-position" items={positions} bind:value={draft.map.position} /></div>
+                            <div><Label class="mb-2" for="map-pin">{t("pinSize")}</Label><Input id="map-pin" min="1" type="number" bind:value={draft.map.pinSize} /></div>
+                            <div><Label class="mb-2" for="map-cone-size">{t("coneSize")}</Label><Input id="map-cone-size" min="1" type="number" bind:value={draft.map.coneSize} /></div>
+                        </div>
+                        <div><Label class="mb-2" for="map-cone-color">{t("coneColor")}</Label><Input id="map-cone-color" type="text" bind:value={draft.map.coneColor} /></div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div><Label class="mb-2" for="map-zoom">{t("defaultZoom")}</Label><Input id="map-zoom" min="1" type="number" bind:value={draft.map.defaultZoom} /></div>
+                            <div><Label class="mb-2" for="map-min-zoom">{t("minZoom")}</Label><Input id="map-min-zoom" min="1" type="number" bind:value={draft.map.minZoom} /></div>
+                            <div><Label class="mb-2" for="map-max-zoom">{t("maxZoom")}</Label><Input id="map-max-zoom" min="1" type="number" bind:value={draft.map.maxZoom} /></div>
+                        </div>
+                        <Toggle bind:checked={draft.map.visibleOnLoad}>{t("visibleOnLoad")}</Toggle>
+                        <Toggle bind:checked={draft.map.static}>{t("staticMap")}</Toggle>
+                        <Toggle bind:checked={draft.map.minimizeOnHotspotClick}>{t("minimizeOnHotspotClick")}</Toggle>
+                        <div class="grid grid-cols-2 gap-2">
+                            <Toggle bind:checked={draft.map.buttons.maximize}>{t("buttonMaximize")}</Toggle><Toggle bind:checked={draft.map.buttons.close}>{t("buttonClose")}</Toggle>
+                            <Toggle bind:checked={draft.map.buttons.reset}>{t("buttonReset")}</Toggle><Toggle bind:checked={draft.map.buttons.north}>{t("buttonNorth")}</Toggle>
+                        </div>
+                    {/if}
+                </fieldset>
+
+                <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                    <legend class="px-2 font-medium">{t("planPlugin")}</legend>
+                    <Toggle bind:checked={draft.plan.enabled}>{t("enabled")}</Toggle>
+                    {#if draft.plan.enabled}
+                        <div class="grid grid-cols-3 gap-3">
+                            <div><Label class="mb-2" for="latitude">{t("latitude")}</Label><Input id="latitude" max="90" min="-90" type="number" bind:value={draft.plan.latitude} /></div>
+                            <div><Label class="mb-2" for="longitude">{t("longitude")}</Label><Input id="longitude" max="180" min="-180" type="number" bind:value={draft.plan.longitude} /></div>
+                            <div><Label class="mb-2" for="altitude">{t("altitude")}</Label><Input id="altitude" type="number" bind:value={draft.plan.altitude} /></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><Label class="mb-2" for="bearing">{t("bearing")}</Label><Input id="bearing" type="number" bind:value={draft.plan.bearing} /></div>
+                            <div><Label class="mb-2" for="plan-position">{t("position")}</Label><Select id="plan-position" items={positions} bind:value={draft.plan.position} /></div>
+                            <div><Label class="mb-2" for="plan-width">{t("width")}</Label><Input id="plan-width" type="text" bind:value={draft.plan.width} /></div>
+                            <div><Label class="mb-2" for="plan-height">{t("height")}</Label><Input id="plan-height" type="text" bind:value={draft.plan.height} /></div>
+                            <div><Label class="mb-2" for="plan-pin">{t("pinSize")}</Label><Input id="plan-pin" min="1" type="number" bind:value={draft.plan.pinSize} /></div>
+                            <div><Label class="mb-2" for="plan-zoom">{t("defaultZoom")}</Label><Input id="plan-zoom" max="22" min="0" type="number" bind:value={draft.plan.defaultZoom} /></div>
+                        </div>
+                        <Toggle bind:checked={draft.plan.visibleOnLoad}>{t("visibleOnLoad")}</Toggle>
+                        <Toggle bind:checked={draft.plan.minimizeOnHotspotClick}>{t("minimizeOnHotspotClick")}</Toggle>
+                        <div class="grid grid-cols-3 gap-2">
+                            <Toggle bind:checked={draft.plan.buttons.maximize}>{t("buttonMaximize")}</Toggle><Toggle bind:checked={draft.plan.buttons.close}>{t("buttonClose")}</Toggle><Toggle bind:checked={draft.plan.buttons.reset}>{t("buttonReset")}</Toggle>
+                        </div>
+                        <div><Label class="mb-2" for="layer-url">{t("tileLayerUrl")}</Label><Input id="layer-url" required type="text" bind:value={draft.plan.layer.urlTemplate} /></div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div><Label class="mb-2" for="layer-name">{t("layerName")}</Label><Input id="layer-name" type="text" bind:value={draft.plan.layer.name} /></div>
+                            <div><Label class="mb-2" for="layer-attribution">{t("attribution")}</Label><Input id="layer-attribution" type="text" bind:value={draft.plan.layer.attribution} /></div>
+                        </div>
+                    {/if}
+                </fieldset>
+
+                <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                    <legend class="px-2 font-medium">{t("stereo")}</legend>
+                    <Toggle bind:checked={draft.stereo.enabled}>{t("enabled")}</Toggle>
+                    {#if draft.stereo.enabled}<p class="text-xs text-gray-500 dark:text-gray-400">{t("stereoGyroscopeHint")}</p>{/if}
+                </fieldset>
+
+                <fieldset class="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                    <legend class="px-2 font-medium">{t("visibleRange")}</legend>
+                    <Toggle bind:checked={draft.visibleRange.enabled}>{t("enabled")}</Toggle>
+                    {#if draft.visibleRange.enabled}
+                        <Toggle bind:checked={draft.visibleRange.usePanoData}>{t("usePanoData")}</Toggle>
+                        <Toggle bind:checked={draft.visibleRange.horizontalEnabled}>{t("horizontalRange")}</Toggle>
+                        {#if draft.visibleRange.horizontalEnabled}
+                            <div class="grid grid-cols-2 gap-3">
+                                <div><Label class="mb-2" for="horizontal-min">{t("minimumAngle")}</Label><Input id="horizontal-min" max="360" min="-360" type="number" bind:value={draft.visibleRange.horizontalMin} /></div>
+                                <div><Label class="mb-2" for="horizontal-max">{t("maximumAngle")}</Label><Input id="horizontal-max" max="360" min="-360" type="number" bind:value={draft.visibleRange.horizontalMax} /></div>
+                            </div>
+                        {/if}
+                        <Toggle bind:checked={draft.visibleRange.verticalEnabled}>{t("verticalRange")}</Toggle>
+                        {#if draft.visibleRange.verticalEnabled}
+                            <div class="grid grid-cols-2 gap-3">
+                                <div><Label class="mb-2" for="vertical-min">{t("minimumAngle")}</Label><Input id="vertical-min" max="90" min="-90" type="number" bind:value={draft.visibleRange.verticalMin} /></div>
+                                <div><Label class="mb-2" for="vertical-max">{t("maximumAngle")}</Label><Input id="vertical-max" max="90" min="-90" type="number" bind:value={draft.visibleRange.verticalMax} /></div>
+                            </div>
+                        {/if}
+                    {/if}
                 </fieldset>
             </div>
             <footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-gray-900">

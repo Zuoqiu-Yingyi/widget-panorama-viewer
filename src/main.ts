@@ -5,6 +5,10 @@ import { createWidgetContext, startThemeSync } from "./lib/siyuan";
 import App from "./App.svelte";
 
 import "@photo-sphere-viewer/core/index.css";
+import "@photo-sphere-viewer/compass-plugin/index.css";
+import "@photo-sphere-viewer/map-plugin/index.css";
+import "@photo-sphere-viewer/plan-plugin/index.css";
+import "@photo-sphere-viewer/settings-plugin/index.css";
 import "@photo-sphere-viewer/video-plugin/index.css";
 import "./style.css";
 
