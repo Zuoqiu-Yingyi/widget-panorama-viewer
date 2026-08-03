@@ -1,0 +1,30 @@
+{
+    "name": "panorama-viewer",
+    "author": "Zuoqiu-Yingyi",
+    "url": "https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer",
+    "version": "0.1.1",
+    "displayName": {
+        "default": "Panorama Viewer",
+        "zh-CN": "全景图预览",
+        "zh-TW": "全景圖預覽"
+    },
+    "description": {
+        "default": "Preview 360-degree panoramic images and videos in SiYuan Note.",
+        "zh-CN": "在思源笔记中预览 360 度全景图片和全景视频。",
+        "zh-TW": "在思源筆記中預覽 360 度全景圖片和全景影片。"
+    },
+    "readme": {
+        "default": "README.md",
+        "zh-CN": "README.zh-CN.md",
+        "zh-TW": "README.zh-CN.md"
+    },
+    "funding": {
+        "openCollective": "",
+        "patreon": "",
+        "github": "https://github.com/Zuoqiu-Yingyi",
+        "custom": [
+            "https://afdian.com/a/zuoqiu",
+            "https://ko-fi.com/zuoqiu"
+        ]
+    }
+}
