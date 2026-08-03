@@ -1,0 +1,39 @@
+{
+    "name": "panorama-viewer",
+    "type": "module",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "build:dev": "vite build --sourcemap inline",
+        "preview": "vite preview",
+        "lint": "eslint --max-warnings 0 .",
+        "format": "eslint --fix .",
+        "check:svelte": "svelte-check --tsconfig ./tsconfig.json"
+    },
+    "dependencies": {
+        "@photo-sphere-viewer/autorotate-plugin": "^5.15.0",
+        "@photo-sphere-viewer/compass-plugin": "^5.15.0",
+        "@photo-sphere-viewer/core": "^5.15.0",
+        "@photo-sphere-viewer/cubemap-adapter": "^5.15.0",
+        "@photo-sphere-viewer/cubemap-tiles-adapter": "^5.15.0",
+        "@photo-sphere-viewer/cubemap-video-adapter": "^5.15.0",
+        "@photo-sphere-viewer/dual-fisheye-adapter": "^5.15.0",
+        "@photo-sphere-viewer/equirectangular-tiles-adapter": "^5.15.0",
+        "@photo-sphere-viewer/equirectangular-video-adapter": "^5.15.0",
+        "@photo-sphere-viewer/gyroscope-plugin": "^5.15.0",
+        "@photo-sphere-viewer/map-plugin": "^5.15.0",
+        "@photo-sphere-viewer/plan-plugin": "^5.15.0",
+        "@photo-sphere-viewer/settings-plugin": "^5.15.0",
+        "@photo-sphere-viewer/stereo-plugin": "^5.15.0",
+        "@photo-sphere-viewer/video-plugin": "^5.15.0",
+        "@photo-sphere-viewer/visible-range-plugin": "^5.15.0",
+        "@workspace/types": "workspace:^",
+        "flowbite-svelte": "^1.33.1"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.3.3",
+        "tailwindcss": "^4.3.3"
+    }
+}
