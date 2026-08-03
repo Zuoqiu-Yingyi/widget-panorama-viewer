@@ -1,66 +1,79 @@
-# 构建 | Build
+# 构建并部署 | Build and deploy
 
 name: build
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+    tags:
+      # REF https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 env:
-  NODE_VERSION: 24
-  PNPM_VERSION: 11.17.0
-  WORKSPACE_PACKAGE: panorama-viewer
-  PACKAGE_PATH: workspace/widgets/panorama-viewer
+  PACKAGE_PATH: ./workspace/widgets/panorama-viewer
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout monorepo
+      # Checkout
+      # REF https://github.com/marketplace/actions/checkout
+      - name: Checkout
         uses: actions/checkout@v7
         with:
+          # 将要拉取的仓库 | repository will to pull
           repository: Zuoqiu-Yingyi/siyuan-packages-monorepo
-          ref: main
+          # 递归拉取 submodule | recursively checkout submodules
           submodules: recursive
 
-      - name: Checkout package source
-        uses: actions/checkout@v7
+      # Install Node.js
+      # REF https://github.com/marketplace/actions/setup-node-js-environment
+      - name: Install Node.js
+        uses: actions/setup-node@v6
         with:
-          path: ${{ env.PACKAGE_PATH }}
+          # Node.js 版本号 | Node.js version
+          node-version: latest
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+          # # Node.js 源 | Node.js registry
+          registry-url: https://registry.npmjs.org
+
+      # Install pnpm
+      # REF https://github.com/marketplace/actions/setup-pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        id: pnpm-install
         with:
-          version: ${{ env.PNPM_VERSION }}
+          # pnpm 版本号 | pnpm version
+          version: 11
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-          cache-dependency-path: workspace/pnpm-lock.yaml
+          # 是否安装 npm 包 | if install npm package?
+          run_install: false
+          cache: false
 
+      # Install dependencies
       - name: Install dependencies
-        run: pnpm -C workspace install --frozen-lockfile
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd ./workspace
+          pnpm install
 
-      - name: Check Svelte
-        run: pnpm -C workspace --filter ${{ env.WORKSPACE_PACKAGE }} run check:svelte
+      # Build package
+      - name: Build package
+        run: |
+          cd $GITHUB_WORKSPACE
+          cd $PACKAGE_PATH
+          pnpm build
 
-      - name: Lint
-        run: pnpm -C workspace --filter ${{ env.WORKSPACE_PACKAGE }} run lint
-
-      - name: Build
-        run: pnpm -C workspace --filter ${{ env.WORKSPACE_PACKAGE }} run build
-
-      - name: Publish distribution branch
-        uses: peaceiris/actions-gh-pages@v4
+      # Deploy to publish branch
+      # REF https://github.com/marketplace/actions/github-pages
+      - name: Deploy to publish branch
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: publish
-          publish_dir: ${{ env.PACKAGE_PATH }}/dist
-          force_orphan: true
+          # # 构建产物目录 | directory of build artifacts
+          build_dir: ${{ env.PACKAGE_PATH }}/dist
+
+          # # 提交到目标分支
+          target_branch: publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_ACTIONS }}
