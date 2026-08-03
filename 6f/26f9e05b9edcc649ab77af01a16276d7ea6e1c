@@ -1,0 +1,21 @@
+public/README.zh-CN.md
+  s_bbcc59f3e6ca27::t_ce1196fb47e526 1-2,4-12,14,16,18,20,23-73,83-87,89,91,97,99,101
+public/README.md
+  s_bbcc59f3e6ca27::t_8ae9bd0a77a02c 1-2,4-12,14,16,18,20,23-75,83-87,89,91,97,99,101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.39-trip",
+  "base_commit_sha": "6f26f9e05b9edcc649ab77af01a16276d7ea6e1c",
+  "prompts": {},
+  "sessions": {
+    "s_bbcc59f3e6ca27": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d6bf8afa-a540-49e8-93da-6da60a4e1889",
+        "model": "claude-glm-5.2"
+      },
+      "human_author": "Yingyi / 颖逸 <49649786+Zuoqiu-Yingyi@users.noreply.github.com>"
+    }
+  }
+}
