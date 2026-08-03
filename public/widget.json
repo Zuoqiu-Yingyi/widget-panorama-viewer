@@ -2,7 +2,7 @@
     "name": "panorama-viewer",
     "author": "Zuoqiu-Yingyi",
     "url": "https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "displayName": {
         "default": "Panorama Viewer",
         "zh-CN": "全景图预览",
