@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.1](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/compare/v0.1.0...v0.1.1) (2026-08-03)
+
+
+### Miscellaneous
+
+* bump version to 0.1.1 in package.json, widget.json, and release-please-config.json ([d8a3cfb](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/commit/d8a3cfb1f685f6207d5eb64f8bcd35d012005213))
+* release v0.1.1 ([ceee77e](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/commit/ceee77e3fe9ff734ece09d4e4867455267959c8c))
+* update preview image for improved visual representation ([9c59103](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/commit/9c591039b5373185c906002602837db9c34fd951))
+
 ## [0.1.0](https://github.com/Zuoqiu-Yingyi/widget-panorama-viewer/compare/v0.1.0...v0.1.0) (2026-08-03)
 
 
